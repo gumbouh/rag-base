@@ -16,22 +16,27 @@ def get_retriver(vector_path, model_path):
     vectordb = Chroma(persist_directory=vector_path, embedding_function=embedding)
     return vectordb
 
-def get_reranker():
+def get_reranker(reranker_path):
     from FlagEmbedding import FlagReranker
-    reranker = FlagReranker('/data/gumbou/models/bge-reranker-base', use_fp16=True) # Setting use_fp16 to True speeds up computation with a slight performance degradation
+    reranker = FlagReranker(reranker_path, use_fp16=True) # Setting use_fp16 to True speeds up computation with a slight performance degradation
     return reranker
 
 def clean_context(context):
     content = []
     for idx, c in enumerate(context):
-        content_str =""
-        
-        # content_str +="文档["+str(idx)+"]\n "
-        content_str += c[0].page_content+"\n "
+        content_str = "文档信息:"+str(c[0].metadata)+'\n文档内容:'+c[0].page_content+"\n "
         
         content.append(content_str)
     return content
-
+def get_clean_context(context):
+    # content = []
+    content_str = ""
+    for idx, c in enumerate(context):
+        # print(c[0].page_content)
+        # content.append(c[0].page_content)
+        content_str +="文档["+str(idx)+"]: "
+        content_str += str(c)+"\n "
+    return content_str
 def construct_pair(doc, context):
     pair = []
     for c in context:

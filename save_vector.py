@@ -13,6 +13,8 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.embeddings import HuggingFaceBgeEmbeddings
 from langchain.vectorstores import Chroma
+from chromadb.utils import embedding_functions
+from langchain.embeddings import HuggingFaceEmbeddings, SentenceTransformerEmbeddings 
 import re
 
 def process_data():
@@ -43,8 +45,8 @@ def load_pdf_directory(pdf_directory):
 '''
 分割文本至合适的长度
 '''
-def to_chunks(docs):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=40)
+def to_chunks(docs,chunk_size=1000,chunk_overlap=200):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     text_chunks = text_splitter.split_documents(docs)
     return text_chunks
 
@@ -60,11 +62,14 @@ def init_vector(chunks,persist_directory,embedding_model_path):
                     encode_kwargs=encode_kwargs,
                     query_instruction="为文本生成向量表示用于文本检索"
                 )
+
+    # model = SentenceTransformerEmbeddings(model_name=embedding_model_path)
+    # embedding = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=embedding_model_path,device='cuda:0',normalize_embeddings=True)
     db = Chroma.from_documents(documents=chunks, embedding=embedding,persist_directory=persist_directory)
     db.persist()
     
 def get_retriver(persist_directory):
-    model_name = "/data/gumbou/models/m3e-base"
+    model_name = "/home/gumbou/models/m3e-base"
     model_kwargs = {'device': 'cuda:0'}
     encode_kwargs = {'normalize_embeddings': True}
     embedding = HuggingFaceBgeEmbeddings(
@@ -84,9 +89,22 @@ def get_clean_context(context):
 
 if __name__ == "__main__":
     # short_data()
-    persist_directory = "/data/gumbou/vector-34class-entropy-filter-03"
-    file=""
-    chunks = to_chunks("/data/gumbou/codespace/rag-clf/data/cmcc_train_10%_summary.csv")
+    pdf_directory='data/wenshi_doc/'
+    docs =load_pdf_directory(pdf_directory)
+    # print(docs)
     
-    init_vector(chunks,persist_directory)
+    chunks = to_chunks(docs)
+    # print(chunks)
+    
+    persist_directory = "vector/wenshi/db-2"
+    embedding_model_path='/home/gumbou/models/m3e-base'
+
+    init_vector(chunks,persist_directory,embedding_model_path)
+    
+    
+    # test
+    # vector = get_retriver(persist_directory)
+    # query = "成为股东的条件"
+    # docs = vector.similarity_search_with_score(query)
+    # print(docs)
 
