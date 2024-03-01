@@ -31,3 +31,7 @@ def chat(prompt):
     }
     response = ask_glm(json_data)
     return response
+if __name__=='__main__':
+    answer = chat('你好')
+    print(answer)
+    
